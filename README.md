@@ -1,4 +1,4 @@
-# Water Tank Card
+# <img src="images/icon.svg" alt="" height="28" valign="middle"> Water Tank Card
 
 A custom [Home Assistant](https://www.home-assistant.io/) Lovelace card that displays the water level of a tank as a styled vessel: an animated wavy water surface, a measurement scale down the side, a litres readout, a status pill, an optional temperature chip, and an optional **pump control** with a flow animation and a power-correlated fault warning.
 

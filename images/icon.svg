@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Water Tank Card">
+  <defs>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4aa3df"/>
+      <stop offset="1" stop-color="#2f87c9"/>
+    </linearGradient>
+    <clipPath id="tankClip">
+      <rect x="64" y="66" width="128" height="146" rx="30"/>
+    </clipPath>
+  </defs>
+
+  <!-- empty vessel interior -->
+  <rect x="64" y="66" width="128" height="146" rx="30" fill="#eef4f8"/>
+
+  <!-- water with a gentle wavy surface -->
+  <g clip-path="url(#tankClip)">
+    <path d="M56,132 q18,-12 36,0 t36,0 t36,0 t36,0 V216 H56 Z" fill="url(#water)"/>
+    <path d="M56,132 q18,-12 36,0 t36,0 t36,0 t36,0" fill="none" stroke="#7bc0ec" stroke-width="4" stroke-linecap="round" opacity="0.75"/>
+  </g>
+
+  <!-- vessel outline -->
+  <rect x="64" y="66" width="128" height="146" rx="30" fill="none" stroke="#2c6da3" stroke-width="7"/>
+
+  <!-- cap -->
+  <rect x="106" y="50" width="44" height="18" rx="6" fill="#5a6470"/>
+  <ellipse cx="128" cy="50" rx="20" ry="6" fill="#6b7682"/>
+</svg>
