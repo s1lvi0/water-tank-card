@@ -25,16 +25,23 @@ No build step, no dependencies — a single plain Web Component. Fully configura
 
 ### HACS (recommended)
 
-1. In Home Assistant go to **HACS**.
-2. Top-right menu (⋮) → **Custom repositories**.
-3. Paste your repository URL (e.g. `https://github.com/<you>/water-tank-card`), choose category **Dashboard**, and add it.
-4. Find **Water Tank Card** in HACS and click **Download**.
-5. HACS adds the dashboard resource automatically. If it doesn't, add it manually under **Settings → Dashboards → ⋮ → Resources**:
-   - URL: `/hacsfiles/water-tank-card/water-tank-card.js`
-   - Type: **JavaScript module**
-6. Reload your browser (Ctrl/Cmd + F5) and add the card to a dashboard.
+This card is not yet in the default HACS store, so add it as a **custom repository**:
 
-> **Tip:** create at least one GitHub **Release** (e.g. `v1.0.0`) so HACS shows a version to install.
+[![Open your Home Assistant instance and open this repository inside HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=s1lvi0&repository=water-tank-card&category=dashboard)
+
+Or add it manually:
+
+1. In Home Assistant, open **HACS**.
+2. Top-right menu (**⋮**) → **Custom repositories**.
+3. Set:
+   - **Repository:** `https://github.com/s1lvi0/water-tank-card`
+   - **Type:** **Dashboard**
+   - Click **Add**.
+4. Search HACS for **Water Tank Card**, open it, and click **Download** (confirm the latest version).
+5. HACS registers the dashboard resource automatically. If it doesn't, add it manually under **Settings → Dashboards → ⋮ → Resources → Add resource**:
+   - **URL:** `/hacsfiles/water-tank-card/water-tank-card.js`
+   - **Type:** **JavaScript module**
+6. Hard-refresh your browser (Ctrl/Cmd + Shift + R) and add the card to a dashboard.
 
 ### Manual
 
