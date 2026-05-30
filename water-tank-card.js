@@ -16,7 +16,7 @@
  * ---------------------------------------------------------------------------
  *   percentage_entity (REQUIRED) sensor reporting the level in %  (0-100)
  *   liters_entity     (REQUIRED) sensor reporting the current volume in litres
- *   capacity          full volume for the "… di N L" readout       (default 4050)
+ *   capacity          full volume for the "… of N L" readout       (default 4050)
  *   name              card title; "" or show_name:false to hide
  *
  *   --- display toggles ------------------------------------------------------
@@ -37,13 +37,13 @@
  *   --- thresholds & colors --------------------------------------------------
  *   warn / low        % at/below which fill turns amber / red (default 25 / 15)
  *   water_color / warn_color / low_color   hex fills          (#2f87c9/#e0a32e/#d8513a)
- *   status_labels:    { ok: "OK", warn: "Basso", low: "Critico" }
+ *   status_labels:    { ok: "OK", warn: "Low", low: "Critical" }
  *
  *   --- extra info chips -----------------------------------------------------
  *   temperature_entity  optional sensor shown as a chip
  *   chip_decimals       rounding for numeric chips             (default 1)
  *   extra_entities:     - entity: binary_sensor.pump
- *                         name: Pompa
+ *                         name: Pump
  *                         icon: mdi:water-pump
  *
  *   --- pump control ---------------------------------------------------------
@@ -51,8 +51,8 @@
  *   pump_power_entity optional power sensor (W) shown in the pump row
  *   power_threshold   W below which an ON pump is flagged as faulty (default 10)
  *                     -> red warning icon (right of the toggle) + flow suppressed
- *   pump_fault_label  tooltip on the warning icon            (default "Anomalia")
- *   pump_name         label for the toggle                    (default "Pompa")
+ *   pump_fault_label  tooltip on the warning icon            (default "Fault")
+ *   pump_name         label for the toggle                    (default "Pump")
  *   pump_icon         icon override; if omitted, the entity's own icon is used
  *
  *   --- interaction ----------------------------------------------------------
@@ -71,7 +71,7 @@ class WaterTankCard extends HTMLElement {
     }
     this._config = Object.assign(
       {
-        name: 'Serbatoio',
+        name: 'Tank',
         capacity: 4050,
         decimals: 0,
         warn: 25,
@@ -90,9 +90,9 @@ class WaterTankCard extends HTMLElement {
         size: 140,
         scale_step: 25,
         chip_decimals: 1,
-        pump_name: 'Pompa',
+        pump_name: 'Pump',
         power_threshold: 10,
-        pump_fault_label: 'Anomalia',
+        pump_fault_label: 'Fault',
         tap_action: 'more-info',
         status_labels: {},
       },
@@ -100,10 +100,10 @@ class WaterTankCard extends HTMLElement {
     );
     this._config.percentage_entity = pctEnt;
     this._config.status_labels = Object.assign(
-      { ok: 'OK', warn: 'Basso', low: 'Critico' },
+      { ok: 'OK', warn: 'Low', low: 'Critical' },
       config.status_labels || {}
     );
-    this._uid = 'npi' + Math.random().toString(36).slice(2, 9);
+    this._uid = 'wtc' + Math.random().toString(36).slice(2, 9);
     this._built = false;
   }
 
@@ -199,10 +199,10 @@ class WaterTankCard extends HTMLElement {
     const power = c.pump_power_entity
       ? `<span class="${id}-pumpsub" id="${id}pumppow"></span>` : '';
     const warn = c.pump_power_entity
-      ? `<svg class="${id}-pumpwarn" id="${id}pumpwarn" viewBox="0 0 24 24"><title>${c.pump_fault_label || 'Anomalia'}</title><path fill="var(--error-color,#d8513a)" d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/></svg>`
+      ? `<svg class="${id}-pumpwarn" id="${id}pumpwarn" viewBox="0 0 24 24"><title>${c.pump_fault_label || 'Fault'}</title><path fill="var(--error-color,#d8513a)" d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/></svg>`
       : '';
     return `<div class="${id}-pump" id="${id}pumprow">${icon}` +
-      `<div class="${id}-pumptext"><span class="${id}-pumpname" id="${id}pumpname">${c.pump_name || 'Pompa'}</span>${power}</div>` +
+      `<div class="${id}-pumptext"><span class="${id}-pumpname" id="${id}pumpname">${c.pump_name || 'Pump'}</span>${power}</div>` +
       `<ha-switch id="${id}pump"></ha-switch>${warn}</div>`;
   }
 
@@ -423,16 +423,16 @@ class WaterTankCard extends HTMLElement {
 
     if (this._el.name) this._el.name.textContent = c.name;
 
-    const fmt = new Intl.NumberFormat('it-IT');
+    const fmt = new Intl.NumberFormat('en-US');
     if (this._el.pct) {
-      this._el.pct.textContent = ok ? pct.toFixed(0) + '%' : 'n/d';
+      this._el.pct.textContent = ok ? pct.toFixed(0) + '%' : 'n/a';
       this._el.pct.style.color = ok && pct > c.low
         ? 'var(--primary-text-color)' : 'var(--secondary-text-color)';
     }
     if (this._el.l) {
       this._el.l.textContent = lit.ok
-        ? fmt.format(Number(lit.val.toFixed(c.decimals))) + ' ' + lit.unit + ' di ' + fmt.format(c.capacity) + ' L'
-        : 'litri non disponibili';
+        ? fmt.format(Number(lit.val.toFixed(c.decimals))) + ' ' + lit.unit + ' of ' + fmt.format(c.capacity) + ' L'
+        : 'litres unavailable';
     }
     if (this._el.pill) {
       if (!ok) {
@@ -448,14 +448,14 @@ class WaterTankCard extends HTMLElement {
         this._el.pill.style.color = fg;
       }
     }
-    const chipFmt = new Intl.NumberFormat('it-IT', { maximumFractionDigits: c.chip_decimals });
+    const chipFmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: c.chip_decimals });
     (this._chipMap || []).forEach((m, idx) => {
       const span = this._el.chips[idx];
       if (!span) return;
       const st = this._state(m.entity);
       let val;
       if (!st) {
-        val = 'n/d';
+        val = 'n/a';
       } else {
         const num = Number(st.state);
         const shown = Number.isNaN(num) ? st.state : chipFmt.format(num);
@@ -525,29 +525,29 @@ customElements.define('water-tank-card', WaterTankCard);
  *  Edits made here and in the YAML (Code) editor stay in sync automatically.
  * ------------------------------------------------------------------------ */
 const WTC_EDITOR_DEFAULTS = {
-  name: 'Serbatoio', capacity: 4050, decimals: 0, warn: 25, low: 15,
+  name: 'Tank', capacity: 4050, decimals: 0, warn: 25, low: 15,
   water_color: '#2f87c9', warn_color: '#e0a32e', low_color: '#d8513a',
   animate: true, show_name: true, show_percentage: true, show_liters: true,
   show_status: true, show_scale: true, show_waves: true, show_bubbles: true,
-  size: 140, scale_step: 25, chip_decimals: 1, pump_name: 'Pompa', power_threshold: 10,
-  pump_fault_label: 'Anomalia', tap_action: 'more-info',
+  size: 140, scale_step: 25, chip_decimals: 1, pump_name: 'Pump', power_threshold: 10,
+  pump_fault_label: 'Fault', tap_action: 'more-info',
 };
 
 const WTC_EDITOR_LABELS = {
-  percentage_entity: 'Entità percentuale (richiesta)',
-  liters_entity: 'Entità litri (richiesta)',
-  name: 'Nome', capacity: 'Capacità (L)',
-  size: 'Dimensione (px)', scale_step: 'Passo scala (%)', decimals: 'Decimali litri',
-  warn: 'Soglia "Basso" (%)', low: 'Soglia "Critico" (%)',
-  show_name: 'Mostra nome', show_percentage: 'Mostra %', show_liters: 'Mostra litri',
-  show_status: 'Mostra stato', show_scale: 'Mostra scala', show_waves: 'Onde',
-  show_bubbles: 'Bollicine', animate: 'Animazioni',
-  water_color: 'Colore acqua (hex)', warn_color: 'Colore "Basso" (hex)',
-  low_color: 'Colore "Critico" (hex)',
-  temperature_entity: 'Entità temperatura (opz.)', tap_action: 'Azione al tocco',
-  pump_entity: 'Interruttore pompa (opz.)', pump_name: 'Etichetta pompa',
-  pump_power_entity: 'Potenza pompa (opz.)', power_threshold: 'Soglia minima potenza (W)',
-  pump_fault_label: 'Testo badge anomalia',
+  percentage_entity: 'Percentage entity (required)',
+  liters_entity: 'Litres entity (required)',
+  name: 'Name', capacity: 'Capacity (L)',
+  size: 'Size (px)', scale_step: 'Scale step (%)', decimals: 'Litre decimals',
+  warn: 'Low threshold (%)', low: 'Critical threshold (%)',
+  show_name: 'Show name', show_percentage: 'Show %', show_liters: 'Show litres',
+  show_status: 'Show status', show_scale: 'Show scale', show_waves: 'Waves',
+  show_bubbles: 'Bubbles', animate: 'Animations',
+  water_color: 'Water colour (hex)', warn_color: 'Low colour (hex)',
+  low_color: 'Critical colour (hex)',
+  temperature_entity: 'Temperature entity (opt.)', tap_action: 'Tap action',
+  pump_entity: 'Pump switch (opt.)', pump_name: 'Pump label',
+  pump_power_entity: 'Pump power (opt.)', power_threshold: 'Minimum power threshold (W)',
+  pump_fault_label: 'Fault badge text',
 };
 
 const WTC_EDITOR_SCHEMA = [
@@ -586,8 +586,8 @@ const WTC_EDITOR_SCHEMA = [
   { name: 'power_threshold', selector: { number: { mode: 'box', min: 0, step: 1, unit_of_measurement: 'W' } } },
   { name: 'pump_fault_label', selector: { text: {} } },
   { name: 'tap_action', selector: { select: { mode: 'dropdown', options: [
-    { value: 'more-info', label: 'Apri dettagli' },
-    { value: 'none', label: 'Nessuna' },
+    { value: 'more-info', label: 'Open more-info' },
+    { value: 'none', label: 'None' },
   ] } } },
 ];
 

@@ -11,7 +11,7 @@ No build step, no dependencies — a single plain Web Component. Fully configura
 - Tank-shaped graphic with a gradient fill and an animated, genuinely wavy surface
 - Side scale with configurable step (e.g. every 10 % or 25 %)
 - Two dedicated inputs: a **percentage** entity and a **litres** entity
-- Status pill (`OK` / `Basso` / `Critico`) with configurable labels and colour thresholds
+- Status pill (`OK` / `Low` / `Critical`) with configurable labels and colour thresholds
 - Optional temperature chip and arbitrary extra chips
 - Optional **pump toggle** (a `switch` entity) with the pump's own icon
 - Optional **pump power** reading; when the pump is on but power is below a threshold the pump is shown stopped, the flow line turns red and a warning appears
@@ -48,26 +48,26 @@ Minimum configuration:
 
 ```yaml
 type: custom:water-tank-card
-percentage_entity: sensor.serbatoio_percentuale
-liters_entity: sensor.serbatoio_litri
+percentage_entity: sensor.tank_percentage
+liters_entity: sensor.tank_litres
 ```
 
 A fuller example:
 
 ```yaml
 type: custom:water-tank-card
-percentage_entity: sensor.serbatoio_percentuale
-liters_entity: sensor.serbatoio_litri
-name: Serbatoio Garage
+percentage_entity: sensor.tank_percentage
+liters_entity: sensor.tank_litres
+name: Garage Tank
 capacity: 4050
 scale_step: 25
 size: 150
 warn: 25
 low: 15
 water_color: "#2f87c9"
-temperature_entity: sensor.serbatoio_temperatura
-pump_entity: switch.pompa_giardino
-pump_power_entity: sensor.pompa_potenza
+temperature_entity: sensor.tank_temperature
+pump_entity: switch.garden_pump
+pump_power_entity: sensor.pump_power
 power_threshold: 10
 tap_action: more-info
 ```
@@ -78,8 +78,8 @@ tap_action: more-info
 |---|---|---|---|
 | `percentage_entity` | string | **required** | Sensor reporting the level in % (0–100). Drives the fill, the big %, and the status. |
 | `liters_entity` | string | **required** | Sensor reporting the current volume in litres. Drives the readout. |
-| `capacity` | number | `4050` | Full volume used in the "… di N L" readout. |
-| `name` | string | `Serbatoio` | Card title. |
+| `capacity` | number | `4050` | Full volume used in the "… of N L" readout. |
+| `name` | string | `Tank` | Card title. |
 | `show_name` | boolean | `true` | Show the title. |
 | `show_percentage` | boolean | `true` | Show the big percentage. |
 | `show_liters` | boolean | `true` | Show the litres readout. |
@@ -92,8 +92,8 @@ tap_action: more-info
 | `scale_step` | number | `25` | A scale tick every N percent. |
 | `decimals` | number | `0` | Decimals on the litres readout. |
 | `chip_decimals` | number | `1` | Rounding for numeric chips (e.g. temperature). |
-| `warn` | number | `25` | % at/below which the fill turns amber (`Basso`). |
-| `low` | number | `15` | % at/below which the fill turns red (`Critico`). |
+| `warn` | number | `25` | % at/below which the fill turns amber (`Low`). |
+| `low` | number | `15` | % at/below which the fill turns red (`Critical`). |
 | `water_color` | string | `#2f87c9` | Healthy fill colour (hex). |
 | `warn_color` | string | `#e0a32e` | Amber fill colour (hex). |
 | `low_color` | string | `#d8513a` | Red fill colour (hex). |
@@ -103,9 +103,9 @@ tap_action: more-info
 | `pump_entity` | string | – | Optional `switch`; renders an on/off toggle. |
 | `pump_power_entity` | string | – | Optional power sensor (W) shown in the pump row. |
 | `power_threshold` | number | `10` | W below which an ON pump is flagged as faulty (pump shown stopped, flow line red, warning icon). |
-| `pump_name` | string | `Pompa` | Label for the pump toggle. |
+| `pump_name` | string | `Pump` | Label for the pump toggle. |
 | `pump_icon` | string | – | Icon override; if omitted the switch entity's own icon is used. |
-| `pump_fault_label` | string | `Anomalia` | Tooltip on the fault warning icon. |
+| `pump_fault_label` | string | `Fault` | Tooltip on the fault warning icon. |
 | `tap_action` | string | `more-info` | `more-info` opens the percentage entity; `none` disables. |
 
 ### Two entities
@@ -115,9 +115,9 @@ The card needs the level both as a percentage and in litres. If your sensor only
 ```yaml
 template:
   - sensor:
-      - name: Serbatoio litri
+      - name: Tank litres
         unit_of_measurement: L
-        state: "{{ (states('sensor.serbatoio_percentuale') | float(0)) / 100 * 4050 }}"
+        state: "{{ (states('sensor.tank_percentage') | float(0)) / 100 * 4050 }}"
 ```
 
 > A vertical tank's depth-to-volume relationship is roughly linear in the middle but not at the rounded top and bottom. For accurate litres, calibrate against known added volumes rather than a pure linear formula.
