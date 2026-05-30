@@ -6,6 +6,8 @@ Works with any tank — set your own `capacity`, colours and thresholds. It was 
 
 No build step, no dependencies — a single plain Web Component. Fully configurable from the visual editor **or** YAML.
 
+![Water Tank Card](images/screenshot.png)
+
 ## Features
 
 - Tank-shaped graphic with a gradient fill and an animated, genuinely wavy surface
