@@ -7,7 +7,7 @@ Works with any tank — set your own `capacity`, colours and thresholds. It was 
 No build step, no dependencies — a single plain Web Component. Fully configurable from the visual editor **or** YAML.
 
 <p align="center">
-  <img src="images/demo.gif" alt="Water Tank Card" width="640">
+  <img src="images/demo.gif" alt="Water Tank Card" width="500">
 </p>
 
 ## Features
