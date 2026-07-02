@@ -1,6 +1,6 @@
 # <img src="images/icon.svg" alt="" height="28" valign="middle"> Water Tank Card
 
-A custom [Home Assistant](https://www.home-assistant.io/) Lovelace card that displays the water level of a tank as a styled vessel: an animated wavy water surface, a measurement scale down the side, a litres readout, a status pill, an optional temperature chip, and an optional **pump control** with a flow animation and a power-correlated fault warning.
+A custom [Home Assistant](https://www.home-assistant.io/) Lovelace card that displays the water level of a tank as a styled vessel: an animated wavy water surface, a measurement scale down the side, a litres readout, a status pill, an optional temperature chip, and an optional **pump control** with a flow animation and a power-correlated standby/fault indicator.
 
 Works with any tank — set your own `capacity`, colours and thresholds. It was originally built around the Rototec **NPI4000** tank (Ø171 · H215 · 4050 L usable), which is why several defaults are tuned for a 4050 L vessel.
 
@@ -18,7 +18,7 @@ No build step, no dependencies — a single plain Web Component. Fully configura
 - Status pill (`OK` / `Low` / `Critical`) with configurable labels and colour thresholds
 - Optional temperature chip and arbitrary extra chips
 - Optional **pump toggle** (a `switch` entity) with the pump's own icon
-- Optional **pump power** reading; when the pump is on but power is below a threshold the pump is shown stopped, the flow line turns red and a warning appears
+- Optional **pump power** reading; when the pump is on but power is below a threshold, the pump is shown idle in **standby** (tap closed — an amber badge, flow line paused/greyed). If the power reading itself is missing or invalid while the pump is on, that's shown as an actual **fault** (red badge)
 - Click targets: percentage area, litres, chips, pump name and pump power each open their own entity's more-info dialog
 - Respects light/dark themes and the "reduce motion" system setting
 - Visual (UI) editor and YAML, kept in sync
@@ -113,9 +113,10 @@ tap_action: more-info
 | `extra_entities` | list | – | Extra chips: `entity`, optional `name`, `icon`. |
 | `pump_entity` | string | – | Optional `switch`; renders an on/off toggle. |
 | `pump_power_entity` | string | – | Optional power sensor (W) shown in the pump row. |
-| `power_threshold` | number | `10` | W below which an ON pump is flagged as faulty (pump shown stopped, flow line red, warning icon). |
+| `power_threshold` | number | `10` | W below which an ON pump is considered idle: shown as **standby** (tap closed, amber badge, flow paused). A missing/invalid power reading while the pump is on is shown as an actual **fault** (red badge) instead. |
 | `pump_name` | string | `Pump` | Label for the pump toggle. |
 | `pump_icon` | string | – | Icon override; if omitted the switch entity's own icon is used. |
+| `pump_standby_label` | string | `Standby` | Tooltip on the standby badge. |
 | `pump_fault_label` | string | `Fault` | Tooltip on the fault warning icon. |
 | `tap_action` | string | `more-info` | `more-info` opens the percentage entity; `none` disables. |
 

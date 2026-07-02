@@ -49,9 +49,13 @@
  *   --- pump control ---------------------------------------------------------
  *   pump_entity       optional switch; renders an on/off toggle in the card
  *   pump_power_entity optional power sensor (W) shown in the pump row
- *   power_threshold   W below which an ON pump is flagged as faulty (default 10)
- *                     -> red warning icon (right of the toggle) + flow suppressed
- *   pump_fault_label  tooltip on the warning icon            (default "Fault")
+ *   power_threshold   W below which an ON pump is considered idle (default 10)
+ *                     -> pump is energised but drawing no load because the tap
+ *                        is closed: shown as standby (amber badge), flow paused
+ *                     -> if the power reading itself is missing/invalid while
+ *                        the pump is on, that's shown as an actual fault (red)
+ *   pump_standby_label tooltip on the standby badge          (default "Standby")
+ *   pump_fault_label  tooltip on the fault warning icon      (default "Fault")
  *   pump_name         label for the toggle                    (default "Pump")
  *   pump_icon         icon override; if omitted, the entity's own icon is used
  *
@@ -93,6 +97,7 @@ class WaterTankCard extends HTMLElement {
         pump_name: 'Pump',
         power_threshold: 10,
         pump_fault_label: 'Fault',
+        pump_standby_label: 'Standby',
         tap_action: 'more-info',
         status_labels: {},
       },
@@ -198,12 +203,12 @@ class WaterTankCard extends HTMLElement {
       : `<ha-state-icon id="${id}pumpicon"></ha-state-icon>`;
     const power = c.pump_power_entity
       ? `<span class="${id}-pumpsub" id="${id}pumppow"></span>` : '';
-    const warn = c.pump_power_entity
-      ? `<svg class="${id}-pumpwarn" id="${id}pumpwarn" viewBox="0 0 24 24"><title>${c.pump_fault_label || 'Fault'}</title><path fill="var(--error-color,#d8513a)" d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/></svg>`
+    const badge = c.pump_power_entity
+      ? `<ha-icon class="${id}-pumpbadge" id="${id}pumpbadge" style="display:none;"></ha-icon>`
       : '';
     return `<div class="${id}-pump" id="${id}pumprow">${icon}` +
       `<div class="${id}-pumptext"><span class="${id}-pumpname" id="${id}pumpname">${c.pump_name || 'Pump'}</span>${power}</div>` +
-      `<ha-switch id="${id}pump"></ha-switch>${warn}</div>`;
+      `<ha-switch id="${id}pump"></ha-switch>${badge}</div>`;
   }
 
   _fireMoreInfo(entityId) {
@@ -277,7 +282,8 @@ class WaterTankCard extends HTMLElement {
           .${id}-pumptext{display:flex;flex-direction:column;line-height:1.25;min-width:0;}
           .${id}-pumpname{font-size:14px;color:var(--primary-text-color);}
           .${id}-pumpsub{font-size:12px;color:var(--secondary-text-color);font-variant-numeric:tabular-nums;}
-          .${id}-pumpwarn{width:21px;height:21px;display:none;flex:0 0 auto;margin-left:2px;}
+          .${id}-pumpbadge{--mdc-icon-size:21px;width:21px;height:21px;display:none;flex:0 0 auto;
+                      align-items:center;justify-content:center;margin-left:2px;}
           .${id}-pump ha-icon,.${id}-pump ha-state-icon{--mdc-icon-size:20px;width:20px;height:20px;display:flex;
                       align-items:center;justify-content:center;color:var(--secondary-text-color);flex:0 0 auto;}
           .${id}-pump ha-switch{flex:0 0 auto;margin-left:auto;}
@@ -362,7 +368,7 @@ class WaterTankCard extends HTMLElement {
       pumpicon: c.pump_entity && !c.pump_icon ? $('pumpicon') : null,
       pumpname: c.pump_entity ? $('pumpname') : null,
       pumppow: c.pump_power_entity ? $('pumppow') : null,
-      pumpwarn: c.pump_power_entity ? $('pumpwarn') : null,
+      pumpbadge: c.pump_power_entity ? $('pumpbadge') : null,
       flow: c.pump_entity ? $('flow') : null,
       flowline: c.pump_entity ? $('flowline') : null,
     };
@@ -477,22 +483,33 @@ class WaterTankCard extends HTMLElement {
         this._el.pumpicon.stateObj = st;
       }
       const on = avail && st.state === 'on';
+      // On but drawing no measurable power = pump energised, tap closed (standby),
+      // not a fault. Only a missing/invalid power reading counts as an actual fault.
       let fault = false;
+      let standby = false;
       if (on && c.pump_power_entity) {
         const ps = this._state(c.pump_power_entity);
         const pv = ps ? Number(ps.state) : NaN;
-        fault = !ps || Number.isNaN(pv) || pv < c.power_threshold;
+        if (!ps || Number.isNaN(pv)) fault = true;
+        else if (pv < c.power_threshold) standby = true;
       }
       this._pumpFault = fault;
+      this._pumpStandby = standby;
+      const idle = fault || standby;
       if (this._el.flow) {
         this._el.flow.style.display = on ? '' : 'none';
       }
       if (this._el.flowline) {
-        this._el.flowline.setAttribute('stroke', fault ? 'var(--error-color, #d8513a)' : (c.water_color || '#2f87c9'));
-        this._el.flowline.style.animationPlayState = fault ? 'paused' : 'running';
+        const flowColor = fault
+          ? 'var(--error-color, #d8513a)'
+          : standby
+            ? 'var(--secondary-text-color, #8a95a1)'
+            : (c.water_color || '#2f87c9');
+        this._el.flowline.setAttribute('stroke', flowColor);
+        this._el.flowline.style.animationPlayState = idle ? 'paused' : 'running';
       }
       if (this._svg) {
-        if (fault) this._svg.pauseAnimations();
+        if (idle) this._svg.pauseAnimations();
         else this._svg.unpauseAnimations();
       }
     }
@@ -508,8 +525,20 @@ class WaterTankCard extends HTMLElement {
       }
       this._el.pumppow.style.color = 'var(--secondary-text-color)';
     }
-    if (this._el.pumpwarn) {
-      this._el.pumpwarn.style.display = this._pumpFault ? 'block' : 'none';
+    if (this._el.pumpbadge) {
+      if (this._pumpFault) {
+        this._el.pumpbadge.style.display = 'flex';
+        this._el.pumpbadge.setAttribute('icon', 'mdi:alert-circle');
+        this._el.pumpbadge.title = c.pump_fault_label || 'Fault';
+        this._el.pumpbadge.style.color = 'var(--error-color, #d8513a)';
+      } else if (this._pumpStandby) {
+        this._el.pumpbadge.style.display = 'flex';
+        this._el.pumpbadge.setAttribute('icon', 'mdi:pause-circle-outline');
+        this._el.pumpbadge.title = c.pump_standby_label || 'Standby';
+        this._el.pumpbadge.style.color = 'var(--warning-color, #e0a32e)';
+      } else {
+        this._el.pumpbadge.style.display = 'none';
+      }
     }
   }
 
@@ -530,7 +559,7 @@ const WTC_EDITOR_DEFAULTS = {
   animate: true, show_name: true, show_percentage: true, show_liters: true,
   show_status: true, show_scale: true, show_waves: true, show_bubbles: true,
   size: 140, scale_step: 25, chip_decimals: 1, pump_name: 'Pump', power_threshold: 10,
-  pump_fault_label: 'Fault', tap_action: 'more-info',
+  pump_fault_label: 'Fault', pump_standby_label: 'Standby', tap_action: 'more-info',
 };
 
 const WTC_EDITOR_LABELS = {
@@ -547,7 +576,7 @@ const WTC_EDITOR_LABELS = {
   temperature_entity: 'Temperature entity (opt.)', tap_action: 'Tap action',
   pump_entity: 'Pump switch (opt.)', pump_name: 'Pump label',
   pump_power_entity: 'Pump power (opt.)', power_threshold: 'Minimum power threshold (W)',
-  pump_fault_label: 'Fault badge text',
+  pump_fault_label: 'Fault badge text', pump_standby_label: 'Standby badge text',
 };
 
 const WTC_EDITOR_SCHEMA = [
@@ -584,6 +613,7 @@ const WTC_EDITOR_SCHEMA = [
   { name: 'pump_name', selector: { text: {} } },
   { name: 'pump_power_entity', selector: { entity: { domain: 'sensor', device_class: 'power' } } },
   { name: 'power_threshold', selector: { number: { mode: 'box', min: 0, step: 1, unit_of_measurement: 'W' } } },
+  { name: 'pump_standby_label', selector: { text: {} } },
   { name: 'pump_fault_label', selector: { text: {} } },
   { name: 'tap_action', selector: { select: { mode: 'dropdown', options: [
     { value: 'more-info', label: 'Open more-info' },
